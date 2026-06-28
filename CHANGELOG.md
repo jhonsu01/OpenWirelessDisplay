@@ -10,6 +10,14 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-28
+### Added
+- **Botón "+ Monitor virtual"** en el servidor: descarga el paquete oficial del *Virtual
+  Display Driver* (open-source, VirtualDrivers) y lanza su instalador con UAC, para habilitar
+  el **modo extendido** sin pasos manuales. Si falla, abre la página oficial como respaldo.
+- **Botón "↻ Actualizar lista"**: re-lee los monitores sin reiniciar (para que el monitor
+  virtual recién instalado aparezca en el desplegable).
+
 ## [0.1.6] - 2026-06-28
 ### Fixed
 - **Tema oscuro completo:** el desplegable de monitor se veía casi blanco (popup e items con

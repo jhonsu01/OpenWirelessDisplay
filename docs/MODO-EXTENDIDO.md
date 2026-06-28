@@ -13,7 +13,7 @@ en el desplegable "Monitor a compartir".
 
 Driver recomendado (open-source, MIT, firmado): **Virtual Display Driver (VDD)**.
 
-- Repositorio: <https://github.com/VirtualDisplay/Virtual-Display-Driver>
+- Repositorio: <https://github.com/VirtualDrivers/Virtual-Display-Driver>
   (mantenido por la comunidad; antes en `itsmikethetech/Virtual-Display-Driver`).
 
 Pasos generales (los nombres exactos pueden variar según la versión del release; sigue el

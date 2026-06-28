@@ -28,6 +28,46 @@ public partial class MainWindow : Window
         MonitorCombo.SelectedIndex = monitors.Count > 0 ? sel : -1;
     }
 
+    private void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        int prev = MonitorCombo.SelectedIndex;
+        LoadMonitors();
+        int count = (MonitorCombo.ItemsSource as System.Collections.ICollection)?.Count ?? 0;
+        if (prev >= 0 && prev < count) MonitorCombo.SelectedIndex = prev;
+        OnLog("Lista de monitores actualizada.");
+    }
+
+    private async void VirtualButton_Click(object sender, RoutedEventArgs e)
+    {
+        var ok = MessageBox.Show(
+            "Se descargara e instalara el driver de pantalla virtual open-source (Virtual Display Driver). " +
+            "Windows pedira permiso (UAC). Tras instalarlo, ponlo en 'Extender' (Config. de pantalla) y pulsa " +
+            "'Actualizar lista'.\n\n¿Continuar?",
+            "Instalar monitor virtual", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (ok != MessageBoxResult.Yes) return;
+
+        VirtualButton.IsEnabled = false;
+        try
+        {
+            await Core.VirtualDisplayInstaller.RunAsync(OnLog);
+        }
+        catch (Exception ex)
+        {
+            OnLog($"ERROR instalando el driver: {ex.Message}");
+            OnLog("Abriendo la pagina oficial para instalarlo manualmente...");
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = Core.VirtualDisplayInstaller.ReleasesPage,
+                    UseShellExecute = true
+                });
+            }
+            catch { }
+        }
+        finally { VirtualButton.IsEnabled = true; }
+    }
+
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
         try
