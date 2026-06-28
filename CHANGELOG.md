@@ -10,6 +10,15 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-28
+### Fixed
+- **El desplegable de monitor salía vacío** (no se podía elegir otra pantalla). Se enlazaba a
+  una propiedad de un `struct` vía `DisplayMemberPath` y no mostraba texto. Ahora usa items de
+  texto plano (índice del combo = índice del monitor). Verificado: lista los 3 monitores.
+### Added
+- **Mantener pantalla encendida en Android** mientras se comparte (`FLAG_KEEP_SCREEN_ON`):
+  evita que el dispositivo se bloquee y se corte la conexión.
+
 ## [0.1.4] - 2026-06-28
 ### Added
 - **Selector de monitor a compartir** en el servidor: elige cualquier monitor (incluido un

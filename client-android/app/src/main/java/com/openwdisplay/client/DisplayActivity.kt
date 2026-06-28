@@ -14,6 +14,7 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import com.openwdisplay.client.databinding.ActivityDisplayBinding
 
@@ -33,6 +34,9 @@ class DisplayActivity : AppCompatActivity(), VideoClient.Listener, SurfaceHolder
         super.onCreate(savedInstanceState)
         binding = ActivityDisplayBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // Mantener la pantalla encendida mientras se comparte: evita el bloqueo y
+        // la desconexion al apagarse la pantalla del dispositivo.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemBars()
 
         binding.surface.holder.addCallback(this)

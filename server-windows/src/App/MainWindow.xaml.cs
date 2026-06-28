@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using OpenWirelessDisplay.Core;
@@ -18,8 +19,8 @@ public partial class MainWindow : Window
     private void LoadMonitors()
     {
         var monitors = ScreenCapturer.ListMonitors();
-        MonitorCombo.ItemsSource = monitors;
-        MonitorCombo.DisplayMemberPath = nameof(ScreenCapturer.MonitorInfo.Label);
+        // Items de texto plano (el indice del combo == indice del monitor).
+        MonitorCombo.ItemsSource = monitors.Select(m => m.Label).ToList();
         // Selecciona el principal por defecto.
         int sel = 0;
         for (int i = 0; i < monitors.Count; i++)
@@ -31,7 +32,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            int screenIndex = (MonitorCombo.SelectedItem is ScreenCapturer.MonitorInfo m) ? m.Index : 0;
+            int screenIndex = MonitorCombo.SelectedIndex >= 0 ? MonitorCombo.SelectedIndex : 0;
             _server = new StreamServer(Environment.MachineName, screenIndex: screenIndex);
             _server.Log += OnLog;
             _server.ClientCountChanged += OnClientCountChanged;
