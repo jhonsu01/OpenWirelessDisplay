@@ -10,6 +10,13 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-28
+### Fixed
+- **Tema oscuro completo:** el desplegable de monitor se veía casi blanco (popup e items con
+  estilo claro del sistema). Ahora el `ComboBox` tiene plantilla oscura (caja, popup e items
+  con resaltado azul). Además la **barra de título** del servidor es oscura
+  (`DwmSetWindowAttribute`), eliminando las zonas claras de la ventana.
+
 ## [0.1.5] - 2026-06-28
 ### Fixed
 - **El desplegable de monitor salía vacío** (no se podía elegir otra pantalla). Se enlazaba a

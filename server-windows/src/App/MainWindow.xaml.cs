@@ -89,4 +89,22 @@ public partial class MainWindow : Window
         _server?.Stop();
         base.OnClosed(e);
     }
+
+    // Barra de titulo oscura (Windows 10/11).
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        try
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            int useDark = 1;
+            // 20 = DWMWA_USE_IMMERSIVE_DARK_MODE (Win11 / Win10 20H1+); 19 = builds previas.
+            if (DwmSetWindowAttribute(hwnd, 20, ref useDark, sizeof(int)) != 0)
+                DwmSetWindowAttribute(hwnd, 19, ref useDark, sizeof(int));
+        }
+        catch { /* dwmapi no disponible: ignorar */ }
+    }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll", SetLastError = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 }
