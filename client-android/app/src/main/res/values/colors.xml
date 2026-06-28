@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta tema oscuro (coherente con el servidor WPF) -->
+    <color name="bg">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_alt">#262626</color>
+    <color name="accent">#3B82F6</color>
+    <color name="accent_dark">#2563EB</color>
+    <color name="text">#EDEDED</color>
+    <color name="muted">#9CA3AF</color>
+    <color name="success">#22C55E</color>
+    <color name="danger">#EF4444</color>
+    <color name="black">#000000</color>
+</resources>

@@ -1,0 +1,81 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # ---------------- Servidor Windows (.NET + MSI) ----------------
+  server-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Leer version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.json | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Sincronizar version
+        run: python execution/bump_version.py sync
+
+      - name: Instalar WiX
+        run: dotnet tool install --global wix --version 5.0.2
+
+      - name: Publicar (self-contained win-x64)
+        working-directory: server-windows
+        run: dotnet publish src/OpenWirelessDisplay.Server.csproj -c Release -r win-x64 --self-contained true -o installer/publish
+
+      - name: Construir MSI
+        working-directory: server-windows/installer
+        run: wix build Package.wxs -arch x64 -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
+
+      - name: Subir MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-msi
+          path: server-windows/installer/*.msi
+
+  # ---------------- Cliente Android (APK) ----------------
+  client-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar plataformas SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compilar APK (debug)
+        working-directory: client-android
+        run: gradle assembleDebug --no-daemon
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-apk
+          path: client-android/app/build/outputs/apk/debug/*.apk

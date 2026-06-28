@@ -1,0 +1,72 @@
+name: Release
+
+# Dispara una publicacion al crear un tag de version (ej: v0.1.0).
+# Genera MSI + APK y los adjunta a una GitHub Release.
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  server-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.json | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - run: python execution/bump_version.py sync
+      - run: dotnet tool install --global wix --version 5.0.2
+      - working-directory: server-windows
+        run: dotnet publish src/OpenWirelessDisplay.Server.csproj -c Release -r win-x64 --self-contained true -o installer/publish
+      - working-directory: server-windows/installer
+        run: wix build Package.wxs -arch x64 -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-msi
+          path: server-windows/installer/*.msi
+
+  client-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - working-directory: client-android
+        run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-apk
+          path: client-android/app/build/outputs/apk/debug/*.apk
+
+  publish:
+    needs: [ server-windows, client-android ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Crear release y adjuntar binarios
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/server-msi/*.msi
+            dist/client-apk/*.apk
+          generate_release_notes: true

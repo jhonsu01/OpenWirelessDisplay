@@ -1,0 +1,61 @@
+; OpenWirelessDisplay.inf - Indirect Display Driver (UMDF 2.0 / IddCx)
+; SCAFFOLD: completar GUIDs y firmar antes de distribuir. Test-signing en desarrollo.
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = Display
+ClassGuid   = {4d36e968-e325-11ce-bfc1-08002be10318}
+Provider    = %ManufacturerName%
+CatalogFile = OpenWirelessDisplay.cat
+DriverVer   = ; se completa en build (stampinf)
+PnpLockdown = 1
+
+[Manufacturer]
+%ManufacturerName% = Standard,NT$ARCH$.10.0...16299
+
+[Standard.NT$ARCH$.10.0...16299]
+%DeviceName% = OWD_Install, Root\OpenWirelessDisplay
+
+[OWD_Install]
+CopyFiles = UMDriverCopy
+Include   = WUDFRD.inf
+Needs     = WUDFRD.NT
+
+[OWD_Install.hw]
+AddReg = OWD_HardwareReg
+
+[OWD_HardwareReg]
+HKR,,"LowerFilters",0x00010008,"WUDFRd"
+
+[OWD_Install.Services]
+Include = WUDFRD.inf
+Needs   = WUDFRD.NT.Services
+
+[OWD_Install.Wdf]
+UmdfService              = OpenWirelessDisplay,OWD_Install_WdfSection
+UmdfServiceOrder         = OpenWirelessDisplay
+UmdfKernelModeClientPolicy = AllowKernelModeClients
+UmdfFileObjectPolicy     = AllowNullAndUnknownFileObjects
+UmdfFsContextUsePolicy   = CannotUseFsContexts
+
+[OWD_Install_WdfSection]
+UmdfLibraryVersion = 2.31.0
+ServiceBinary      = %12%\UMDF\OpenWirelessDisplay.dll
+DriverCLSID        = {00000000-0000-0000-0000-000000000000} ; TODO: generar CLSID
+
+[SourceDisksFiles]
+OpenWirelessDisplay.dll = 1
+
+[SourceDisksNames]
+1 = %DiskName%
+
+[DestinationDirs]
+UMDriverCopy = 12,UMDF
+
+[UMDriverCopy]
+OpenWirelessDisplay.dll
+
+[Strings]
+ManufacturerName = "OpenWirelessDisplay"
+DiskName         = "OpenWirelessDisplay Installation Disk"
+DeviceName       = "OpenWirelessDisplay Virtual Monitor"

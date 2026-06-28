@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>OpenWirelessDisplay</RootNamespace>
+    <AssemblyName>OpenWirelessDisplay.Server</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Product>OpenWirelessDisplay Server</Product>
+    <Company>OpenWirelessDisplay</Company>
+    <!-- DPI gestionado por el manifest (WPF). Silencia el analizador de WinForms. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <!-- La version la inyecta server-windows/Directory.Build.props (bump_version.py). -->
+  </PropertyGroup>
+
+  <!-- App.xaml no esta en la raiz: declararlo explicitamente como punto de entrada WPF. -->
+  <ItemGroup>
+    <Page Remove="App\App.xaml" />
+    <ApplicationDefinition Include="App\App.xaml" />
+  </ItemGroup>
+
+</Project>

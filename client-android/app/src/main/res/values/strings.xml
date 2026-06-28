@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenWirelessDisplay</string>
+    <string name="subtitle">Conviertete en monitor inalambrico</string>
+    <string name="searching">Buscando servidores en la red…</string>
+    <string name="no_servers">No se encontraron servidores. Asegurate de estar en la misma red Wi-Fi.</string>
+    <string name="enter_pin">Introduce el PIN que aparece en el servidor</string>
+    <string name="connect">Conectar</string>
+    <string name="pair">Emparejar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="connecting">Conectando…</string>
+    <string name="pin_hint">PIN de 6 digitos</string>
+</resources>

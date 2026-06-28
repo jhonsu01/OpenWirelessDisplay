@@ -1,0 +1,29 @@
+# --- General ---
+.tmp/
+*.log
+
+# --- .NET / Servidor Windows ---
+[Bb]in/
+[Oo]bj/
+server-windows/installer/publish/
+server-windows/installer/*.msi
+server-windows/installer/*.wixpdb
+*.user
+
+# --- Android / Cliente ---
+client-android/.gradle/
+client-android/build/
+client-android/app/build/
+client-android/local.properties
+client-android/.idea/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# --- IA / Codegraph / Slurp (Capa 3.1 / 3.2) ---
+.codegraph/
+.slurp/
+
+# --- Memoria efimera de items (se mantiene summary) ---
+# (memory/ se versiona; los intermedios no)

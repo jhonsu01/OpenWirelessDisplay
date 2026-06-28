@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Instalador MSI de OpenWirelessDisplay Server (WiX 4+/6+/7+).
+  La version proviene de version.wxi, generado por execution/bump_version.py.
+  Build:  wix build installer/Package.wxs -arch x64 -o OpenWirelessDisplay-Server-<ver>.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <?include version.wxi ?>
+
+  <Package Name="OpenWirelessDisplay Server"
+           Manufacturer="OpenWirelessDisplay"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="6F2A1B3C-9D4E-4F50-A1B2-7C8D9E0F1A2B"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <SummaryInformation Description="Servidor de pantalla externa inalambrica (open source, MIT)" />
+
+    <MajorUpgrade DowngradeErrorMessage="Ya hay una version mas reciente de !(bind.property.ProductName) instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Directorios de instalacion -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="OpenWirelessDisplay" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppProgramMenuDir" Name="OpenWirelessDisplay" />
+    </StandardDirectory>
+
+    <!-- Caracteristica principal -->
+    <Feature Id="Main" Title="OpenWirelessDisplay Server" Level="1">
+      <ComponentGroupRef Id="ServerFiles" />
+      <ComponentRef Id="AppShortcuts" />
+    </Feature>
+
+    <!-- Harvesting automatico de todo el output self-contained publicado -->
+    <ComponentGroup Id="ServerFiles" Directory="INSTALLFOLDER">
+      <Files Include="publish\**" />
+    </ComponentGroup>
+
+    <!-- Accesos directos (Menu Inicio) -->
+    <Component Id="AppShortcuts" Directory="AppProgramMenuDir" Guid="A3B4C5D6-1234-4567-89AB-CDEF01234567">
+      <Shortcut Id="StartMenuShortcut"
+                Name="OpenWirelessDisplay Server"
+                Description="Servidor de pantalla externa inalambrica"
+                Target="[INSTALLFOLDER]OpenWirelessDisplay.Server.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="CleanProgramMenuDir" Directory="AppProgramMenuDir" On="uninstall" />
+      <RegistryValue Root="HKLM"
+                     Key="Software\OpenWirelessDisplay\Server"
+                     Name="installed"
+                     Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+  </Package>
+</Wix>
