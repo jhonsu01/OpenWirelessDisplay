@@ -35,6 +35,13 @@ class VideoClient(
     private var out: OutputStream? = null
     private val sendLock = Any()
 
+    // Buffer de un solo hueco: el hilo de red guarda SIEMPRE el ultimo JPEG (descarta el
+    // anterior si no se ha decodificado). El hilo decodificador toma solo el mas reciente.
+    // Asi, si la decodificacion no alcanza, se saltan cuadros viejos y no se acumula lag.
+    private val frameLock = Object()
+    private var latestJpeg: ByteArray? = null
+    private var decoderThread: Thread? = null
+
     fun connect(listener: Listener) {
         running = true
         thread(name = "video-client") { runSession(listener) }
@@ -81,15 +88,19 @@ class VideoClient(
                 }
             }
 
-            // 3) Recepcion de frames
+            // Hilo decodificador/render: decodifica SOLO el ultimo frame disponible.
+            startDecoder(listener)
+
+            // 3) Recepcion de frames: leer rapido y quedarse con el mas reciente.
             while (running) {
                 val msg = WireProtocol.readMessage(input)
                 if (msg.type == WireProtocol.MSG_FRAME && msg.payload.size > 8) {
                     val jpegOffset = 8
-                    val bmp = BitmapFactory.decodeByteArray(
-                        msg.payload, jpegOffset, msg.payload.size - jpegOffset
-                    )
-                    if (bmp != null) listener.onFrame(bmp)
+                    val jpeg = msg.payload.copyOfRange(jpegOffset, msg.payload.size)
+                    synchronized(frameLock) {
+                        latestJpeg = jpeg          // descarta el anterior si seguia pendiente
+                        frameLock.notifyAll()
+                    }
                 } else if (msg.type == WireProtocol.MSG_ERROR) {
                     listener.onError(String(msg.payload, Charsets.UTF_8))
                     break
@@ -106,6 +117,24 @@ class VideoClient(
         }
     }
 
+    private fun startDecoder(listener: Listener) {
+        decoderThread = thread(name = "video-decoder") {
+            while (running) {
+                val jpeg: ByteArray?
+                synchronized(frameLock) {
+                    while (running && latestJpeg == null) {
+                        try { frameLock.wait(500) } catch (_: InterruptedException) {}
+                    }
+                    jpeg = latestJpeg
+                    latestJpeg = null
+                }
+                if (jpeg == null) continue
+                val bmp = try { BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size) } catch (_: Exception) { null }
+                if (bmp != null) listener.onFrame(bmp)
+            }
+        }
+    }
+
     /** Envia un evento de input con coordenadas normalizadas (0..1). */
     fun sendInput(action: Byte, normX: Float, normY: Float) {
         val o = out ?: return
@@ -118,6 +147,7 @@ class VideoClient(
 
     fun close() {
         running = false
+        synchronized(frameLock) { frameLock.notifyAll() } // despierta al decodificador
         try {
             out?.let { WireProtocol.writeMessage(it, WireProtocol.MSG_BYE) }
         } catch (_: Exception) {}

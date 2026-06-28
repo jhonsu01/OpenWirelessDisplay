@@ -10,6 +10,20 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-28
+### Added
+- **Selector de monitor a compartir** en el servidor: elige cualquier monitor (incluido un
+  monitor virtual de un driver IDD) para espejar o **extender**.
+- **Guía de modo extendido** (`docs/MODO-EXTENDIDO.md`): integrar un driver de pantalla
+  virtual open-source para usar el teléfono como monitor nuevo (no espejo).
+### Changed
+- **Menos lag:** el servidor reescala la captura (ancho máx. 1600) y baja FPS por defecto a 12;
+  el cliente Android descarta cuadros atrasados y decodifica solo el más reciente en un hilo
+  aparte (evita la acumulación de retraso).
+### Fixed
+- **Input multi-monitor:** el cursor se mapea usando los bounds reales del monitor (con offset),
+  así el toque cae en el monitor correcto y no solo en el principal.
+
 ## [0.1.3] - 2026-06-28
 ### Fixed
 - **Bug critico: pulsar "Iniciar" cerraba la app.** El estilo del boton asignaba un `Color`

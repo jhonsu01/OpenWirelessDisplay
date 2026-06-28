@@ -12,13 +12,27 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        LoadMonitors();
+    }
+
+    private void LoadMonitors()
+    {
+        var monitors = ScreenCapturer.ListMonitors();
+        MonitorCombo.ItemsSource = monitors;
+        MonitorCombo.DisplayMemberPath = nameof(ScreenCapturer.MonitorInfo.Label);
+        // Selecciona el principal por defecto.
+        int sel = 0;
+        for (int i = 0; i < monitors.Count; i++)
+            if (monitors[i].Primary) { sel = i; break; }
+        MonitorCombo.SelectedIndex = monitors.Count > 0 ? sel : -1;
     }
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            _server = new StreamServer(Environment.MachineName);
+            int screenIndex = (MonitorCombo.SelectedItem is ScreenCapturer.MonitorInfo m) ? m.Index : 0;
+            _server = new StreamServer(Environment.MachineName, screenIndex: screenIndex);
             _server.Log += OnLog;
             _server.ClientCountChanged += OnClientCountChanged;
             _server.PinChanged += OnPinChanged;
@@ -30,6 +44,7 @@ public partial class MainWindow : Window
             InfoText.Text = $"IP: {MdnsResponder.GetLocalIPv4()}    Puerto: {_server.Port}    Clientes: 0";
             StartButton.IsEnabled = false;
             StopButton.IsEnabled = true;
+            MonitorCombo.IsEnabled = false;
         }
         catch (Exception ex)
         {
@@ -48,6 +63,7 @@ public partial class MainWindow : Window
         InfoText.Text = "IP: -    Puerto: -    Clientes: 0";
         StartButton.IsEnabled = true;
         StopButton.IsEnabled = false;
+        MonitorCombo.IsEnabled = true;
     }
 
     private void OnPinChanged(string pin) =>

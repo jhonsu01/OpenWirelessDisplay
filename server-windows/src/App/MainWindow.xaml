@@ -52,7 +52,11 @@
                         <TextBlock x:Name="StatusText" Text="Detenido" FontSize="16" FontWeight="SemiBold"/>
                     </StackPanel>
                     <TextBlock x:Name="InfoText" Text="IP: -    Puerto: -    Clientes: 0"
-                               Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,8,0,12"/>
+                               Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,8,0,8"/>
+                    <TextBlock Text="MONITOR A COMPARTIR" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="MonitorCombo" Margin="0,0,0,12" Padding="8,5"
+                              Background="{StaticResource SurfaceAltBrush}" Foreground="Black"/>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="StartButton" Content="Iniciar" Style="{StaticResource AccentButton}"
                                 Width="120" Click="StartButton_Click"/>

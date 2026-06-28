@@ -42,13 +42,18 @@ public sealed class StreamServer : IDisposable
     public int Port => _port;
     public string CurrentPin => _pin.CurrentPin;
 
+    private readonly int _screenIndex;
+    private readonly int _maxWidth;
+
     public StreamServer(string serverName, int port = WireProtocol.DefaultPort,
-        int targetFps = 15, long jpegQuality = 60)
+        int targetFps = 12, long jpegQuality = 55, int screenIndex = 0, int maxWidth = 1600)
     {
         ServerName = string.IsNullOrWhiteSpace(serverName) ? Environment.MachineName : serverName;
         _port = port;
         _targetFps = Math.Clamp(targetFps, 1, 60);
         _jpegQuality = Math.Clamp(jpegQuality, 10, 95);
+        _screenIndex = screenIndex;
+        _maxWidth = maxWidth;
         _pin = new PinManager();
     }
 
@@ -56,8 +61,8 @@ public sealed class StreamServer : IDisposable
     {
         if (_running) return;
 
-        _capturer = new ScreenCapturer(0, _jpegQuality);
-        _injector = new InputInjector(new Rectangle(0, 0, _capturer.Width, _capturer.Height));
+        _capturer = new ScreenCapturer(_screenIndex, _jpegQuality, _maxWidth);
+        _injector = new InputInjector(_capturer.SourceBounds);
 
         _listener = new TcpListener(IPAddress.Any, _port);
         _listener.Start();

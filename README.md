@@ -104,10 +104,18 @@ python execution/bump_version.py major   # 0.1.0 → 1.0.0
 python execution/bump_version.py set 1.2.3
 ```
 
+## Modo extendido (monitor nuevo, no espejo)
+
+Para usar el teléfono como un **monitor extendido** (arrastrar ventanas) hace falta un driver
+de pantalla virtual. Guía paso a paso: **[docs/MODO-EXTENDIDO.md](docs/MODO-EXTENDIDO.md)**
+(instalar un driver IDD open-source firmado y seleccionarlo en "Monitor a compartir").
+
 ## Hoja de ruta
 
 - [x] MVP: PIN + mDNS + espejo (MJPEG) + input + MSI + APK (CI).
-- [ ] Modo extendido: driver IDD nativo (`server-windows/driver/`).
+- [x] Selector de monitor a compartir + mapeo de input multi-monitor.
+- [x] Modo extendido vía driver virtual open-source (ver `docs/MODO-EXTENDIDO.md`).
+- [ ] Driver IDD nativo propio (`server-windows/driver/`, alternativa al externo).
 - [ ] Codificación H.264/H.265 por hardware (NVENC/AMF/QuickSync) + MediaCodec.
 - [ ] Transporte WebRTC/UDP de baja latencia (hoy TCP).
 - [ ] Audio inalámbrico y multi-cliente.
