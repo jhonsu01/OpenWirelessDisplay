@@ -51,12 +51,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - id: ver
+        run: echo "version=$(jq -r .version version.json)" >> "$GITHUB_OUTPUT"
       - working-directory: client-android
         run: gradle assembleDebug --no-daemon
+      - name: Renombrar APK con la version
+        run: |
+          mkdir -p dist
+          cp client-android/app/build/outputs/apk/debug/app-debug.apk \
+             "dist/OpenWirelessDisplay-${{ steps.ver.outputs.version }}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: client-apk
-          path: client-android/app/build/outputs/apk/debug/*.apk
+          path: dist/*.apk
 
   publish:
     needs: [ server-windows, client-android ]

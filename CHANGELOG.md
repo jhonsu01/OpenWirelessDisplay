@@ -10,6 +10,17 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-28
+### Fixed
+- **Bug critico: pulsar "Iniciar" cerraba la app.** El estilo del boton asignaba un `Color`
+  (`AccentDarkColor`) a la propiedad `Background` (que espera un `Brush`); al hacer hover/click
+  WPF lanzaba `InvalidOperationException: "#FF2563EB" no es un valor valido para Background` y
+  el proceso moria. Se anadio `AccentDarkBrush` y el trigger ahora usa el Brush. Verificado con
+  UI Automation: hover + Iniciar funcionan y se muestra el PIN.
+### Changed
+- **APK con nombre versionado:** el CI ahora publica `OpenWirelessDisplay-<version>.apk`
+  (antes siempre `app-debug.apk`), para diferenciar cada compilacion.
+
 ## [0.1.2] - 2026-06-28
 ### Fixed
 - **Bug critico: la GUI del servidor no abria (crash al inicio).** El `StartupUri` se
