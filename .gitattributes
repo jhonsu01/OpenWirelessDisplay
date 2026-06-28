@@ -1,0 +1,24 @@
+# Normaliza finales de linea para builds multiplataforma (CI Linux + dev Windows).
+* text=auto eol=lf
+
+*.bat        text eol=crlf
+*.cmd        text eol=crlf
+*.cs         text
+*.xaml       text
+*.csproj     text
+*.props      text
+*.wxs        text
+*.wxi        text
+*.kt         text
+*.gradle     text
+*.properties text
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.sh         text eol=lf
+gradlew      text eol=lf
+
+*.png  binary
+*.jar  binary
+*.msi  binary
+*.apk  binary
+*.pdf  binary
