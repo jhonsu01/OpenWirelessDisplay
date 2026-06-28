@@ -89,6 +89,14 @@ public sealed class ScreenCapturer : IDisposable
         return ms.ToArray();
     }
 
+    /// <summary>Tamaño (ancho, alto) de un monitor por indice, para datos informativos.</summary>
+    public static (int Width, int Height) GetMonitorSize(int index)
+    {
+        var screens = Screen.AllScreens;
+        var s = (index >= 0 && index < screens.Length) ? screens[index] : Screen.PrimaryScreen!;
+        return (s.Bounds.Width, s.Bounds.Height);
+    }
+
     /// <summary>Lista los monitores disponibles para mostrar en la UI.</summary>
     public static IReadOnlyList<MonitorInfo> ListMonitors()
     {

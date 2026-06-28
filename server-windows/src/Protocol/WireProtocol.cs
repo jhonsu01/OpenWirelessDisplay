@@ -11,7 +11,7 @@ namespace OpenWirelessDisplay.Protocol;
 /// </summary>
 public static class WireProtocol
 {
-    public const byte ProtocolVersion = 1;
+    public const byte ProtocolVersion = 2;
 
     // Nombre de servicio mDNS/DNS-SD anunciado por el servidor.
     public const string ServiceType = "_openwdisplay._tcp";
@@ -21,15 +21,17 @@ public static class WireProtocol
     public const int DefaultPort = 7345;
 
     // ---- Cliente -> Servidor ----
-    public const byte MsgHello = 0x01;   // payload: JSON {clientName, protocol}
-    public const byte MsgPin = 0x02;     // payload: UTF8 PIN (6 digitos)
-    public const byte MsgInput = 0x10;   // payload: [1 byte action][float x][float y] (BE)
-    public const byte MsgBye = 0x7F;     // sin payload
+    public const byte MsgHello = 0x01;        // payload: JSON {clientName, protocol}
+    public const byte MsgPin = 0x02;          // payload: UTF8 PIN (6 digitos)
+    public const byte MsgSelectMonitor = 0x03;// payload: [4 BE int] indice de monitor elegido
+    public const byte MsgInput = 0x10;        // payload: [1 byte action][float x][float y] (BE)
+    public const byte MsgBye = 0x7F;          // sin payload
 
     // ---- Servidor -> Cliente ----
     public const byte MsgHelloAck = 0x81; // payload: JSON {needPin, serverName, protocol}
     public const byte MsgPinOk = 0x82;    // payload: JSON {width, height, fps}
     public const byte MsgPinFail = 0x83;  // payload: JSON {reason, attemptsLeft}
+    public const byte MsgMonitors = 0x84; // payload: JSON {monitors:[{index,label}], default:int}
     public const byte MsgFrame = 0x90;    // payload: [4 BE w][4 BE h][JPEG bytes]
     public const byte MsgError = 0xFE;    // payload: UTF8 mensaje
 

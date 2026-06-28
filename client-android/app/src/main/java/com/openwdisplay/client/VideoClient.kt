@@ -25,6 +25,8 @@ class VideoClient(
     interface Listener {
         fun onPaired(width: Int, height: Int, fps: Int)
         fun onPinFailed(reason: String, attemptsLeft: Int)
+        /** El servidor ofrece varios monitores; el usuario elige uno (llamar a selectMonitor). */
+        fun onMonitors(labels: List<String>, indices: List<Int>, defaultIndex: Int)
         fun onFrame(bitmap: Bitmap)
         fun onError(message: String)
         fun onDisconnected()
@@ -34,6 +36,10 @@ class VideoClient(
     private var socket: Socket? = null
     private var out: OutputStream? = null
     private val sendLock = Any()
+
+    // Seleccion de monitor por el usuario (cruza del hilo UI al hilo de sesion).
+    private val selectLock = Object()
+    @Volatile private var selectedMonitor: Int? = null
 
     // Buffer de un solo hueco: el hilo de red guarda SIEMPRE el ultimo JPEG (descarta el
     // anterior si no se ha decodificado). El hilo decodificador toma solo el mas reciente.
@@ -91,16 +97,37 @@ class VideoClient(
             // Hilo decodificador/render: decodifica SOLO el ultimo frame disponible.
             startDecoder(listener)
 
-            // 3) Recepcion de frames: leer rapido y quedarse con el mas reciente.
+            // 3) Lista de monitores (protocolo v2): el usuario elige cual ver.
+            val first = WireProtocol.readMessage(input)
+            when {
+                first.type == WireProtocol.MSG_MONITORS -> {
+                    val j = JSONObject(String(first.payload, Charsets.UTF_8))
+                    val arr = j.getJSONArray("monitors")
+                    val labels = ArrayList<String>(arr.length())
+                    val indices = ArrayList<Int>(arr.length())
+                    for (i in 0 until arr.length()) {
+                        val o = arr.getJSONObject(i)
+                        indices.add(o.getInt("index"))
+                        labels.add(o.optString("label", "Monitor ${o.getInt("index") + 1}"))
+                    }
+                    val def = j.optInt("default", indices.firstOrNull() ?: 0)
+                    if (indices.size > 1) listener.onMonitors(labels, indices, def)
+                    val chosen = if (indices.size > 1) awaitSelection(def) else def
+                    WireProtocol.writeMessage(out!!, WireProtocol.MSG_SELECT_MONITOR, WireProtocol.encodeInt32BE(chosen))
+                }
+                first.type == WireProtocol.MSG_FRAME && first.payload.size > 8 -> {
+                    pushFrame(first.payload) // servidor antiguo: ya envia frames
+                }
+                first.type == WireProtocol.MSG_ERROR -> {
+                    listener.onError(String(first.payload, Charsets.UTF_8)); return
+                }
+            }
+
+            // 4) Recepcion de frames: leer rapido y quedarse con el mas reciente.
             while (running) {
                 val msg = WireProtocol.readMessage(input)
                 if (msg.type == WireProtocol.MSG_FRAME && msg.payload.size > 8) {
-                    val jpegOffset = 8
-                    val jpeg = msg.payload.copyOfRange(jpegOffset, msg.payload.size)
-                    synchronized(frameLock) {
-                        latestJpeg = jpeg          // descarta el anterior si seguia pendiente
-                        frameLock.notifyAll()
-                    }
+                    pushFrame(msg.payload)
                 } else if (msg.type == WireProtocol.MSG_ERROR) {
                     listener.onError(String(msg.payload, Charsets.UTF_8))
                     break
@@ -114,6 +141,36 @@ class VideoClient(
         } finally {
             close()
             listener.onDisconnected()
+        }
+    }
+
+    /** Guarda el ultimo frame JPEG (descartando el anterior si no se decodifico). */
+    private fun pushFrame(payload: ByteArray) {
+        val jpeg = payload.copyOfRange(8, payload.size)
+        synchronized(frameLock) {
+            latestJpeg = jpeg
+            frameLock.notifyAll()
+        }
+    }
+
+    /** Lo llama la UI cuando el usuario elige un monitor. */
+    fun selectMonitor(index: Int) {
+        synchronized(selectLock) {
+            selectedMonitor = index
+            selectLock.notifyAll()
+        }
+    }
+
+    /** Espera la seleccion del usuario (hasta 120s); si no, usa el monitor por defecto. */
+    private fun awaitSelection(defaultIndex: Int): Int {
+        synchronized(selectLock) {
+            val deadline = System.currentTimeMillis() + 120_000
+            while (running && selectedMonitor == null) {
+                val left = deadline - System.currentTimeMillis()
+                if (left <= 0) break
+                try { selectLock.wait(left) } catch (_: InterruptedException) {}
+            }
+            return selectedMonitor ?: defaultIndex
         }
     }
 
@@ -147,6 +204,7 @@ class VideoClient(
 
     fun close() {
         running = false
+        synchronized(selectLock) { selectLock.notifyAll() } // despierta espera de seleccion
         synchronized(frameLock) { frameLock.notifyAll() } // despierta al decodificador
         try {
             out?.let { WireProtocol.writeMessage(it, WireProtocol.MSG_BYE) }

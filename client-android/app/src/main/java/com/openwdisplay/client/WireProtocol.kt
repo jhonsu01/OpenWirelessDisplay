@@ -12,13 +12,14 @@ import java.nio.ByteOrder
  * Debe mantenerse en paridad con server-windows/src/Protocol/WireProtocol.cs.
  */
 object WireProtocol {
-    const val PROTOCOL_VERSION = 1
+    const val PROTOCOL_VERSION = 2
     const val SERVICE_TYPE = "_openwdisplay._tcp."
     const val DEFAULT_PORT = 7345
 
     // Cliente -> Servidor
     const val MSG_HELLO: Int = 0x01
     const val MSG_PIN: Int = 0x02
+    const val MSG_SELECT_MONITOR: Int = 0x03
     const val MSG_INPUT: Int = 0x10
     const val MSG_BYE: Int = 0x7F
 
@@ -26,6 +27,7 @@ object WireProtocol {
     const val MSG_HELLO_ACK: Int = 0x81
     const val MSG_PIN_OK: Int = 0x82
     const val MSG_PIN_FAIL: Int = 0x83
+    const val MSG_MONITORS: Int = 0x84
     const val MSG_FRAME: Int = 0x90
     const val MSG_ERROR: Int = 0xFE
 
@@ -74,4 +76,11 @@ object WireProtocol {
         ((src[offset + 1].toInt() and 0xFF) shl 16) or
         ((src[offset + 2].toInt() and 0xFF) shl 8) or
         (src[offset + 3].toInt() and 0xFF)
+
+    fun encodeInt32BE(value: Int): ByteArray = byteArrayOf(
+        (value ushr 24).toByte(),
+        (value ushr 16).toByte(),
+        (value ushr 8).toByte(),
+        value.toByte(),
+    )
 }

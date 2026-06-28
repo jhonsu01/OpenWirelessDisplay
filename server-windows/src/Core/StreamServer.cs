@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -27,9 +27,6 @@ public sealed class StreamServer : IDisposable
     private TcpListener? _listener;
     private Thread? _acceptThread;
     private MdnsResponder? _mdns;
-    private ScreenCapturer? _capturer;
-    private InputInjector? _injector;
-    private readonly object _captureLock = new();
     private volatile bool _running;
     private int _clientCount;
 
@@ -61,9 +58,7 @@ public sealed class StreamServer : IDisposable
     {
         if (_running) return;
 
-        _capturer = new ScreenCapturer(_screenIndex, _jpegQuality, _maxWidth);
-        _injector = new InputInjector(_capturer.SourceBounds);
-
+        // Cada cliente crea su propio capturador segun el monitor que elija (multi-dispositivo).
         _listener = new TcpListener(IPAddress.Any, _port);
         _listener.Start();
         _running = true;
@@ -123,8 +118,9 @@ public sealed class StreamServer : IDisposable
                 if (_pin.Verify(candidate))
                 {
                     paired = true;
+                    var (dw, dh) = ScreenCapturer.GetMonitorSize(_screenIndex);
                     WireProtocol.WriteMessage(stream, WireProtocol.MsgPinOk,
-                        JsonSerializer.Serialize(new { width = _capturer!.Width, height = _capturer.Height, fps = _targetFps }));
+                        JsonSerializer.Serialize(new { width = dw, height = dh, fps = _targetFps }));
                     Log?.Invoke($"[{remote}] PIN correcto. Emparejado.");
                     // Rotar PIN para el siguiente dispositivo (seguridad).
                     var next = _pin.Rotate();
@@ -145,34 +141,54 @@ public sealed class StreamServer : IDisposable
                 return;
             }
 
+            // 3) Enviar la lista de monitores para que ESTE dispositivo elija el suyo.
+            var monitors = ScreenCapturer.ListMonitors();
+            WireProtocol.WriteMessage(stream, WireProtocol.MsgMonitors, JsonSerializer.Serialize(new
+            {
+                monitors = monitors.Select(m => new { index = m.Index, label = m.Label }),
+                @default = _screenIndex,
+            }));
+
             counted = true;
             ClientCountChanged?.Invoke(Interlocked.Increment(ref _clientCount));
 
-            // 3) Sesion: hilo emisor de frames + lectura de input en este hilo.
-            var senderAlive = true;
-            var sender = new Thread(() => FrameSenderLoop(stream, ref senderAlive))
-            { IsBackground = true, Name = "frames" };
-            sender.Start();
-
+            // 4) Contexto por cliente: empieza con el monitor por defecto; puede cambiarlo en vivo.
+            var ctx = new ClientContext(new ScreenCapturer(_screenIndex, _jpegQuality, _maxWidth));
             try
             {
-                while (_running && client.Connected)
+                var sender = new Thread(() => FrameSenderLoop(stream, ctx))
+                { IsBackground = true, Name = "frames" };
+                sender.Start();
+
+                try
                 {
-                    if (!WireProtocol.ReadMessage(stream, out type, out payload)) break;
-                    if (type == WireProtocol.MsgBye) break;
-                    if (type == WireProtocol.MsgInput && payload.Length >= 9)
+                    while (_running && client.Connected)
                     {
-                        byte action = payload[0];
-                        float x = WireProtocol.ReadFloatBE(payload, 1);
-                        float y = WireProtocol.ReadFloatBE(payload, 5);
-                        _injector?.Inject(action, x, y);
+                        if (!WireProtocol.ReadMessage(stream, out type, out payload)) break;
+                        if (type == WireProtocol.MsgBye) break;
+                        if (type == WireProtocol.MsgInput && payload.Length >= 9)
+                        {
+                            byte action = payload[0];
+                            float x = WireProtocol.ReadFloatBE(payload, 1);
+                            float y = WireProtocol.ReadFloatBE(payload, 5);
+                            ctx.Injector.Inject(action, x, y);
+                        }
+                        else if (type == WireProtocol.MsgSelectMonitor && payload.Length >= 4)
+                        {
+                            int idx = WireProtocol.ReadInt32BE(payload, 0);
+                            SwitchMonitor(ctx, idx, remote);
+                        }
                     }
+                }
+                finally
+                {
+                    ctx.Alive = false;
+                    sender.Join(500);
                 }
             }
             finally
             {
-                senderAlive = false;
-                sender.Join(500);
+                lock (ctx.Lock) { ctx.Capturer.Dispose(); }
             }
         }
         catch (Exception ex)
@@ -188,23 +204,23 @@ public sealed class StreamServer : IDisposable
         }
     }
 
-    private void FrameSenderLoop(NetworkStream stream, ref bool alive)
+    private void FrameSenderLoop(NetworkStream stream, ClientContext ctx)
     {
         var frameInterval = TimeSpan.FromMilliseconds(1000.0 / _targetFps);
         var sw = Stopwatch.StartNew();
         var header = new byte[8];
-        while (_running && alive)
+        while (_running && ctx.Alive)
         {
             var start = sw.Elapsed;
             try
             {
                 byte[] jpeg;
                 int w, h;
-                lock (_captureLock)
+                lock (ctx.Lock)
                 {
-                    jpeg = _capturer!.CaptureJpeg();
-                    w = _capturer.Width;
-                    h = _capturer.Height;
+                    jpeg = ctx.Capturer.CaptureJpeg();
+                    w = ctx.Capturer.Width;
+                    h = ctx.Capturer.Height;
                 }
 
                 WireProtocol.WriteInt32BE(header.AsSpan(0), w);
@@ -224,13 +240,49 @@ public sealed class StreamServer : IDisposable
         }
     }
 
+    /// <summary>Cambia en vivo el monitor que ve un cliente (sin reconectar).</summary>
+    private void SwitchMonitor(ClientContext ctx, int index, string remote)
+    {
+        try
+        {
+            var fresh = new ScreenCapturer(index, _jpegQuality, _maxWidth);
+            lock (ctx.Lock)
+            {
+                var old = ctx.Capturer;
+                ctx.Capturer = fresh;
+                ctx.Injector = new InputInjector(fresh.SourceBounds);
+                old.Dispose();
+            }
+            Log?.Invoke($"[{remote}] cambio al monitor #{index + 1}.");
+        }
+        catch (Exception ex)
+        {
+            Log?.Invoke($"[{remote}] no se pudo cambiar al monitor #{index + 1}: {ex.Message}");
+        }
+    }
+
+    /// <summary>Estado por cliente: su capturador/inyector actual (intercambiables en vivo).</summary>
+    private sealed class ClientContext
+    {
+        public readonly object Lock = new();
+        public volatile bool Alive = true;
+        public ScreenCapturer Capturer;
+        public InputInjector Injector;
+
+        public ClientContext(ScreenCapturer capturer)
+        {
+            Capturer = capturer;
+            Injector = new InputInjector(capturer.SourceBounds);
+        }
+    }
+
     public void Stop()
     {
         if (!_running) return;
         _running = false;
         try { _listener?.Stop(); } catch { }
         _mdns?.Stop();
-        lock (_captureLock) { _capturer?.Dispose(); _capturer = null; }
+        // Cada cliente libera su propio capturador al desconectarse (ver HandleClient).
         _clientCount = 0;
         ClientCountChanged?.Invoke(0);
         Log?.Invoke("Servidor detenido.");

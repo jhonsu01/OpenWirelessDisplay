@@ -14,9 +14,10 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
             <TextBlock Text="🖥️" FontSize="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <StackPanel>
-                <TextBlock Text="OpenWirelessDisplay" FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="OpenWirelessDisplay" FontSize="22" FontWeight="Bold"
+                           Foreground="{StaticResource AccentBrush}"/>
                 <TextBlock Text="Monitor secundario inalambrico - Servidor Windows"
-                           Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                           Foreground="#D5DBE2" FontSize="12"/>
             </StackPanel>
         </StackPanel>
 

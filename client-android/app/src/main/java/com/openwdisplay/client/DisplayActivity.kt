@@ -71,6 +71,19 @@ class DisplayActivity : AppCompatActivity(), VideoClient.Listener, SurfaceHolder
         binding.overlay.postDelayed({ binding.overlay.visibility = View.GONE }, 2000)
     }
 
+    override fun onMonitors(labels: List<String>, indices: List<Int>, defaultIndex: Int) {
+        runOnUiThread {
+            val defaultPos = indices.indexOf(defaultIndex).coerceAtLeast(0)
+            var chosen = defaultPos
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Elige el monitor a ver")
+                .setSingleChoiceItems(labels.toTypedArray(), defaultPos) { _, which -> chosen = which }
+                .setPositiveButton("Ver") { _, _ -> client?.selectMonitor(indices[chosen]) }
+                .setCancelable(false)
+                .show()
+        }
+    }
+
     override fun onPinFailed(reason: String, attemptsLeft: Int) {
         runOnUiThread {
             binding.overlay.visibility = View.VISIBLE

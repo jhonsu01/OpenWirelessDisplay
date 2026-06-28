@@ -10,6 +10,18 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-28
+### Added
+- **Multi-dispositivo con monitores distintos:** cada dispositivo emparejado elige **su propio
+  monitor** y puede cambiarlo en vivo. El servidor envía la lista de monitores tras el PIN
+  (`MSG_MONITORS`) y el cliente responde con el elegido (`MSG_SELECT_MONITOR`); el servidor crea
+  un capturador por cliente. Verificado: 2 clientes simultáneos viendo monitores diferentes
+  (uno 1600x900, otro 1080x1920). **Protocolo v2.**
+- **Selector de monitor en la app Android** tras emparejar (diálogo con la lista del servidor).
+### Changed
+- **Encabezado del servidor más legible:** el título usa el color de acento y el subtítulo un
+  gris más claro (antes se veía lavado/casi blanco).
+
 ## [0.1.7] - 2026-06-28
 ### Added
 - **Botón "+ Monitor virtual"** en el servidor: descarga el paquete oficial del *Virtual
