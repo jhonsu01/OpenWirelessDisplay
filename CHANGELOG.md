@@ -10,6 +10,13 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-28
+### Fixed
+- **Bug critico: la GUI del servidor no abria (crash al inicio).** El `StartupUri` se
+  resolvia relativo a la carpeta de `App.xaml` (`App/`), generando `App/App/MainWindow.xaml`
+  y lanzando `IOException: No se encuentra el recurso 'app/app/mainwindow.xaml'`. Corregido a
+  `StartupUri="MainWindow.xaml"`. Verificado: la ventana ahora abre correctamente.
+
 ## [0.1.1] - 2026-06-28
 ### Fixed
 - **Bug critico de descubrimiento:** el servidor anunciaba por mDNS una IP de un
