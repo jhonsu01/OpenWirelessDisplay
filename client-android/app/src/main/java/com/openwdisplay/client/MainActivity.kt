@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.openwdisplay.client.databinding.ActivityMainBinding
+import com.openwdisplay.client.databinding.DialogManualBinding
 import com.openwdisplay.client.databinding.DialogPinBinding
 
 /**
@@ -30,6 +31,24 @@ class MainActivity : AppCompatActivity() {
 
         discovery = DiscoveryManager(this)
         discovery.onChanged = { servers -> runOnUiThread { renderServers(servers) } }
+
+        binding.manualButton.setOnClickListener { showManualDialog() }
+    }
+
+    private fun showManualDialog() {
+        val dialogBinding = DialogManualBinding.inflate(layoutInflater)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.connect_manual)
+            .setView(dialogBinding.root)
+            .setPositiveButton(R.string.connect) { _, _ ->
+                val ip = dialogBinding.ipInput.text?.toString()?.trim().orEmpty()
+                val pin = dialogBinding.pinInput.text?.toString()?.trim().orEmpty()
+                if (ip.isNotEmpty()) {
+                    launchDisplay(DiscoveryManager.Server("Manual ($ip)", ip, WireProtocol.DEFAULT_PORT), pin)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     override fun onResume() {

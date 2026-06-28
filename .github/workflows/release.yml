@@ -24,11 +24,13 @@ jobs:
           $v = (Get-Content version.json | ConvertFrom-Json).version
           "version=$v" >> $env:GITHUB_OUTPUT
       - run: python execution/bump_version.py sync
-      - run: dotnet tool install --global wix --version 5.0.2
+      - run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add -g WixToolset.Firewall.wixext/5.0.2
       - working-directory: server-windows
         run: dotnet publish src/OpenWirelessDisplay.Server.csproj -c Release -r win-x64 --self-contained true -o installer/publish
       - working-directory: server-windows/installer
-        run: wix build Package.wxs -arch x64 -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
+        run: wix build Package.wxs -arch x64 -ext WixToolset.Firewall.wixext -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
       - uses: actions/upload-artifact@v4
         with:
           name: server-msi

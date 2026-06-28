@@ -4,7 +4,8 @@
   La version proviene de version.wxi, generado por execution/bump_version.py.
   Build:  wix build installer/Package.wxs -arch x64 -o OpenWirelessDisplay-Server-<ver>.msi
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall">
   <?include version.wxi ?>
 
   <Package Name="OpenWirelessDisplay Server"
@@ -31,6 +32,7 @@
     <Feature Id="Main" Title="OpenWirelessDisplay Server" Level="1">
       <ComponentGroupRef Id="ServerFiles" />
       <ComponentRef Id="AppShortcuts" />
+      <ComponentRef Id="FirewallRules" />
     </Feature>
 
     <!-- Harvesting automatico de todo el output self-contained publicado -->
@@ -50,6 +52,20 @@
                      Key="Software\OpenWirelessDisplay\Server"
                      Name="installed"
                      Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Reglas de Firewall (el instalador corre elevado y puede crearlas).
+         Sin esto, Windows bloquea el trafico entrante del telefono (descubrimiento y stream). -->
+    <Component Id="FirewallRules" Directory="INSTALLFOLDER" Guid="B7C8D9E0-2345-4678-9ABC-DEF012345678">
+      <RegistryValue Root="HKLM" Key="Software\OpenWirelessDisplay\Server"
+                     Name="firewall" Type="integer" Value="1" KeyPath="yes" />
+      <fw:FirewallException Id="OWDProgram" Name="OpenWirelessDisplay Server"
+                            Program="[INSTALLFOLDER]OpenWirelessDisplay.Server.exe"
+                            Scope="any" Profile="all" />
+      <fw:FirewallException Id="OWDmDNS" Name="OpenWirelessDisplay mDNS (UDP 5353)"
+                            Port="5353" Protocol="udp" Scope="any" Profile="all" />
+      <fw:FirewallException Id="OWDStream" Name="OpenWirelessDisplay Stream (TCP 7345)"
+                            Port="7345" Protocol="tcp" Scope="any" Profile="all" />
     </Component>
 
   </Package>

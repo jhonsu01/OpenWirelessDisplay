@@ -268,15 +268,41 @@ public sealed class MdnsResponder : IDisposable
         {
             if (ni.OperationalStatus != OperationalStatus.Up) continue;
             if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+            if (ni.NetworkInterfaceType == NetworkInterfaceType.Tunnel) continue;
             if (!ni.Supports(NetworkInterfaceComponent.IPv4)) continue;
-            foreach (var ua in ni.GetIPProperties().UnicastAddresses)
-                if (ua.Address.AddressFamily == AddressFamily.InterNetwork)
+
+            var props = ni.GetIPProperties();
+            // Solo interfaces con gateway IPv4 valido: descarta adaptadores virtuales
+            // (WSL/Hyper-V, VirtualBox host-only, Bluetooth/APIPA) que no enrutan a la LAN.
+            bool hasGateway = props.GatewayAddresses.Any(g =>
+                g.Address.AddressFamily == AddressFamily.InterNetwork &&
+                !g.Address.Equals(IPAddress.Any));
+            if (!hasGateway) continue;
+
+            foreach (var ua in props.UnicastAddresses)
+                if (ua.Address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(ua.Address))
                     yield return ua.Address;
         }
     }
 
     public static IPAddress GetLocalIPv4()
     {
+        // 1) IP de salida preferida (la interfaz que realmente enruta hacia afuera).
+        //    Es el metodo mas fiable y evita elegir adaptadores virtuales (WSL/Hyper-V).
+        try
+        {
+            using var u = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            u.Connect("8.8.8.8", 65530); // no envia datos: solo resuelve la ruta de salida
+            if (u.LocalEndPoint is IPEndPoint ep &&
+                ep.Address.AddressFamily == AddressFamily.InterNetwork &&
+                !ep.Address.Equals(IPAddress.Any) &&
+                !IPAddress.IsLoopback(ep.Address))
+                return ep.Address;
+        }
+        catch { /* sin ruta por defecto: usar fallback */ }
+
+        // 2) Fallback: primera interfaz real (con gateway).
         var addr = GetActiveIPv4Addresses().FirstOrDefault();
         return addr ?? IPAddress.Loopback;
     }

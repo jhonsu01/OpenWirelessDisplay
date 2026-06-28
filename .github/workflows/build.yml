@@ -28,8 +28,10 @@ jobs:
       - name: Sincronizar version
         run: python execution/bump_version.py sync
 
-      - name: Instalar WiX
-        run: dotnet tool install --global wix --version 5.0.2
+      - name: Instalar WiX + extension Firewall
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add -g WixToolset.Firewall.wixext/5.0.2
 
       - name: Publicar (self-contained win-x64)
         working-directory: server-windows
@@ -37,7 +39,7 @@ jobs:
 
       - name: Construir MSI
         working-directory: server-windows/installer
-        run: wix build Package.wxs -arch x64 -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
+        run: wix build Package.wxs -arch x64 -ext WixToolset.Firewall.wixext -o "OpenWirelessDisplay-Server-${{ steps.ver.outputs.version }}.msi"
 
       - name: Subir MSI
         uses: actions/upload-artifact@v4

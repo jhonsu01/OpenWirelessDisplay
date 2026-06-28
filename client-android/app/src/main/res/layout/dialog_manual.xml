@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/manual_help"
+        android:textColor="@color/text"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/ipInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/ip_hint"
+        android:textColorHint="@color/muted"
+        android:textColor="@color/text"
+        android:textSize="18sp"
+        android:inputType="text"
+        android:fontFamily="monospace"
+        android:autofillHints=""
+        android:layout_marginBottom="12dp" />
+
+    <EditText
+        android:id="@+id/pinInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/pin_hint"
+        android:textColorHint="@color/muted"
+        android:textColor="@color/text"
+        android:textSize="24sp"
+        android:gravity="center"
+        android:inputType="number"
+        android:maxLength="6"
+        android:letterSpacing="0.3"
+        android:fontFamily="monospace"
+        android:autofillHints="" />
+
+</LinearLayout>

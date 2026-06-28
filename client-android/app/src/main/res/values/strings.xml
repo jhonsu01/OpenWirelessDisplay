@@ -10,4 +10,7 @@
     <string name="cancel">Cancelar</string>
     <string name="connecting">Conectando…</string>
     <string name="pin_hint">PIN de 6 digitos</string>
+    <string name="connect_manual">Conectar por IP manualmente</string>
+    <string name="manual_help">Escribe la IP que muestra el servidor (ej: 192.168.1.8) y el PIN</string>
+    <string name="ip_hint">IP del servidor</string>
 </resources>

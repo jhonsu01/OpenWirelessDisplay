@@ -10,6 +10,18 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-28
+### Fixed
+- **Bug critico de descubrimiento:** el servidor anunciaba por mDNS una IP de un
+  adaptador virtual (WSL/Hyper-V, ej. `172.23.128.1`) inalcanzable por el telefono.
+  Ahora selecciona la IP de salida real de la LAN (truco UDP) y descarta interfaces
+  sin gateway (virtuales/Bluetooth/APIPA).
+### Added
+- **Reglas de Firewall en el instalador** (programa + TCP 7345 + mDNS UDP 5353), para
+  que Windows no bloquee el trafico entrante del telefono.
+- **Conexion manual por IP** en la app Android, como alternativa si el descubrimiento
+  automatico falla en la red.
+
 ## [0.1.0] - 2026-06-28
 ### Added
 - Estructura monorepo (server-windows + client-android) bajo licencia MIT.
