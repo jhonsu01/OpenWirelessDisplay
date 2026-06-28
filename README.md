@@ -1,18 +1,29 @@
 # OpenWirelessDisplay
 
-Alternativa **open source (MIT)** a Spacedesk: convierte un dispositivo **Android** en un
-**monitor secundario inalámbrico** de una PC **Windows**, en la misma red Wi-Fi/LAN.
+Alternativa **open source (MIT)** a Spacedesk: convierte uno o varios dispositivos **Android**
+en **monitores secundarios inalámbricos** (espejo o **extendido**) de una PC **Windows**, en la
+misma red Wi-Fi/LAN.
+
+> **Estado: estable** ✅ — versión **v0.2.1**, probada en PC (Windows 11) y Android.
+> Descarga el MSI y el APK en **[Releases](https://github.com/jhonsu01/OpenWirelessDisplay/releases/latest)**.
+
+## Características
 
 - 🔒 **Emparejamiento por PIN** (6 dígitos, rotación tras cada vínculo).
-- 📡 **Autodetección** en la red local vía **mDNS/DNS-SD** (sin teclear IPs).
-- 🌙 **Tema oscuro** en ambas aplicaciones.
-- 📦 Salidas: **MSI** (Windows) y **APK** (Android).
-- 🔖 **Gestión de versiones** automática (SemVer) desde una fuente única.
+- 📡 **Autodetección** en la red local vía **mDNS/DNS-SD** (sin teclear IPs) + **conexión manual por IP**.
+- 🖥️➡️📱 **Modo extendido**: usa el teléfono como un monitor **nuevo** (no solo espejo) mediante un
+  driver de pantalla virtual open-source, instalable con un botón desde la app.
+- 👥 **Multi-dispositivo**: cada teléfono puede ver **un monitor distinto** a la vez (físico o virtual).
+- 🖱️ **Cursor visible** en los monitores virtuales (compuesto en el frame) para arrastrar ventanas.
+- ⚡ **Baja latencia**: reescalado + descarte de cuadros atrasados (decodifica solo el más reciente).
+- 🌙 **Tema oscuro** completo en ambas aplicaciones.
+- 📦 Salidas: **MSI** (Windows) y **APK** (Android), generadas por CI con versión en el nombre.
+- 🔖 **Gestión de versiones** automática (SemVer) desde una fuente única (`version.json`).
 
-> **Estado:** MVP funcional en **modo espejo** (duplica la pantalla principal de Windows).
-> El **modo monitor extendido** (crear un monitor virtual nuevo) requiere el driver IDD
-> nativo, entregado como *scaffold* en [`server-windows/driver/`](server-windows/driver/README.md)
-> para una fase futura (necesita Visual Studio + WDK + firma).
+> **Modo extendido:** requiere instalar un driver de pantalla virtual (un clic en **"+ Monitor
+> virtual"** dentro de la app). Guía: [`docs/MODO-EXTENDIDO.md`](docs/MODO-EXTENDIDO.md).
+> También se incluye el *scaffold* de un driver IDD propio en
+> [`server-windows/driver/`](server-windows/driver/README.md) como alternativa futura.
 
 ---
 
@@ -84,13 +95,17 @@ genera el MSI y el APK como artefactos. Un **tag `vX.Y.Z`** dispara
 
 ## Uso
 
-1. Inicia **OpenWirelessDisplay Server** en Windows y pulsa **Iniciar**. Verás un **PIN**.
-2. Abre la app **OpenWirelessDisplay** en Android (misma Wi-Fi). El PC aparece solo.
-3. Tócalo, escribe el **PIN** y empareja. Tu pantalla se ve en el dispositivo; los toques
-   controlan el cursor del PC.
+1. Instala el **MSI** en Windows y abre **OpenWirelessDisplay Server**.
+2. (Opcional, para extender) Pulsa **"+ Monitor virtual"** para instalar el driver, ponlo en
+   **"Extender"** (Config. de pantalla) y pulsa **"↻ Actualizar lista"**.
+3. Elige el **monitor a compartir** y pulsa **Iniciar**. Verás un **PIN** y la IP.
+4. Abre la app **OpenWirelessDisplay** en Android (misma Wi-Fi). El PC aparece solo (o usa
+   **"Conectar por IP manualmente"**). Escribe el **PIN** y empareja.
+5. Si el servidor ofrece varios monitores, **elige cuál ver** en el diálogo de la app. Los toques
+   controlan el cursor sobre ese monitor; **cada dispositivo puede ver un monitor distinto**.
 
-> Permite la app a través del **Firewall de Windows** la primera vez (puerto TCP 7345 y
-> mDNS UDP 5353).
+> Permite la app a través del **Firewall de Windows** la primera vez (el MSI ya añade las reglas
+> para TCP 7345 y mDNS UDP 5353).
 
 ## Gestión de versiones
 
@@ -114,11 +129,14 @@ de pantalla virtual. Guía paso a paso: **[docs/MODO-EXTENDIDO.md](docs/MODO-EXT
 
 - [x] MVP: PIN + mDNS + espejo (MJPEG) + input + MSI + APK (CI).
 - [x] Selector de monitor a compartir + mapeo de input multi-monitor.
-- [x] Modo extendido vía driver virtual open-source (ver `docs/MODO-EXTENDIDO.md`).
+- [x] Modo extendido vía driver virtual open-source (botón integrado, ver `docs/MODO-EXTENDIDO.md`).
+- [x] Multi-dispositivo: cada cliente ve un monitor distinto (protocolo v2).
+- [x] Cursor visible en monitores virtuales.
+- [x] Baja latencia (reescalado + descarte de cuadros).
 - [ ] Driver IDD nativo propio (`server-windows/driver/`, alternativa al externo).
 - [ ] Codificación H.264/H.265 por hardware (NVENC/AMF/QuickSync) + MediaCodec.
 - [ ] Transporte WebRTC/UDP de baja latencia (hoy TCP).
-- [ ] Audio inalámbrico y multi-cliente.
+- [ ] Audio inalámbrico.
 
 ## Licencia
 
