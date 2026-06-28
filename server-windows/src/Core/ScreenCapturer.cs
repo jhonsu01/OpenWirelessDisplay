@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace OpenWirelessDisplay.Core;
@@ -82,12 +83,79 @@ public sealed class ScreenCapturer : IDisposable
     public byte[] CaptureJpeg()
     {
         _captureGfx.CopyFromScreen(_bounds.Left, _bounds.Top, 0, 0, _bounds.Size, CopyPixelOperation.SourceCopy);
+        DrawCursor(); // GDI no captura el cursor: lo componemos manualmente (visible en monitores virtuales)
         if (_scale)
             _scaledGfx!.DrawImage(_capture, 0, 0, _outWidth, _outHeight);
         using var ms = new MemoryStream(96 * 1024);
         _scaled.Save(ms, _jpegCodec, _encoderParams);
         return ms.ToArray();
     }
+
+    /// <summary>Dibuja el cursor del sistema dentro del frame capturado si esta sobre este monitor.</summary>
+    private void DrawCursor()
+    {
+        var ci = new CURSORINFO { cbSize = Marshal.SizeOf<CURSORINFO>() };
+        if (!GetCursorInfo(ref ci) || ci.flags != CURSOR_SHOWING || ci.hCursor == IntPtr.Zero)
+            return;
+
+        int relX = ci.ptScreenPos.X - _bounds.Left;
+        int relY = ci.ptScreenPos.Y - _bounds.Top;
+        if (relX < 0 || relY < 0 || relX >= _bounds.Width || relY >= _bounds.Height)
+            return; // el cursor no esta sobre este monitor
+
+        int hotX = 0, hotY = 0;
+        if (GetIconInfo(ci.hCursor, out var ii))
+        {
+            hotX = ii.xHotspot;
+            hotY = ii.yHotspot;
+            if (ii.hbmMask != IntPtr.Zero) DeleteObject(ii.hbmMask);
+            if (ii.hbmColor != IntPtr.Zero) DeleteObject(ii.hbmColor);
+        }
+
+        IntPtr hdc = _captureGfx.GetHdc();
+        try { DrawIconEx(hdc, relX - hotX, relY - hotY, ci.hCursor, 0, 0, 0, IntPtr.Zero, DI_NORMAL); }
+        finally { _captureGfx.ReleaseHdc(hdc); }
+    }
+
+    #region Win32 cursor interop
+    private const int CURSOR_SHOWING = 0x00000001;
+    private const int DI_NORMAL = 0x0003;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int X; public int Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CURSORINFO
+    {
+        public int cbSize;
+        public int flags;
+        public IntPtr hCursor;
+        public POINT ptScreenPos;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ICONINFO
+    {
+        public bool fIcon;
+        public int xHotspot;
+        public int yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorInfo(ref CURSORINFO pci);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool DrawIconEx(IntPtr hdc, int xLeft, int yTop, IntPtr hIcon,
+        int cxWidth, int cyHeight, int istepIfAniCur, IntPtr hbrFlickerFreeDraw, int diFlags);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+    #endregion
 
     /// <summary>Tamaño (ancho, alto) de un monitor por indice, para datos informativos.</summary>
     public static (int Width, int Height) GetMonitorSize(int index)

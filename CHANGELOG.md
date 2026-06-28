@@ -10,6 +10,13 @@ que toma `version.json` como fuente unica de verdad y la propaga al servidor
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-28
+### Fixed
+- **Cursor visible en los monitores virtuales.** GDI (`CopyFromScreen`) no captura el cursor
+  (es overlay de hardware), por lo que en un monitor virtual no se veía el puntero. Ahora el
+  servidor **compone el cursor del sistema dentro de cada frame** (`GetCursorInfo` + `DrawIconEx`)
+  cuando está sobre el monitor capturado, lo que facilita arrastrar ventanas en la pantalla remota.
+
 ## [0.2.0] - 2026-06-28
 ### Added
 - **Multi-dispositivo con monitores distintos:** cada dispositivo emparejado elige **su propio

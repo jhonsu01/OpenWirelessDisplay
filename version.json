@@ -1,11 +1,11 @@
 {
-  "version": "0.2.0",
-  "versionCode": 9,
+  "version": "0.2.1",
+  "versionCode": 10,
   "channel": "alpha",
   "lastBump": "2026-06-28",
   "components": {
-    "server-windows": "0.2.0",
-    "client-android": "0.2.0",
+    "server-windows": "0.2.1",
+    "client-android": "0.2.1",
     "protocol": "1"
   },
   "_comment": "Fuente unica de verdad de versiones. No editar a mano: usar 'python execution/bump_version.py [major|minor|patch]'. El script propaga a server-windows/Directory.Build.props, server-windows/installer/version.wxi y client-android/app/build.gradle (versionName/versionCode)."
